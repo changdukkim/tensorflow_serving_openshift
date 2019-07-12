@@ -1,0 +1,24 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: mnist-light-pv
+spec:
+  restartPolicy: OnFailure
+  containers:
+    - name: mnist-light
+      image: "docker.io/tensorflow/tensorflow:latest"
+      volumeMounts:
+        - name: mnist-light-pv
+          mountPath: /tmp
+      command:
+      - bash
+      - -c
+      - apt-get update -y && apt-get install git -y;git clone https://github.com/kdh8733/traning_source.git /tmp/app;python /tmp/app/mnist_tensorflow_light.py /tmp/mnist
+      securityContext:
+       privileged: true    
+#        seLinuxOptions:
+#         level: "s0:c123,c456"
+  volumes:
+   - name: mnist-light-pv
+     persistentVolumeClaim:
+      claimName: mnist-light-pvc

@@ -1,0 +1,47 @@
+apiVersion: v1
+kind: DeploymentConfig
+metadata:
+  name: sacp-deployment
+spec:
+  replicas: 2
+  template:
+    metadata:
+      labels:
+        app: sacp-model-server
+    spec:
+      containers:
+      - name: sacp-serving-container
+        imagePullPolicy: Always
+        image: docker-registry.default.svc:5000/openshift/mnist-serving-medium
+        ports:
+        - containerPort: 8500
+        command:
+        - bash
+        - -c
+        - tensorflow_model_server --port=8500 --rest_api_port=8501 --model_name=mnist --model_base_path=/app/mnist-data/mnist;
+        restartPolicy: Always
+      - name: sacp-rest-container
+        image: docker-registry.default.svc:5000/openshift/mnist-serving-medium
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 8888
+        command:
+        - bash
+        - -c
+        - python /app/mnist_client_rest_rpc.py --server=localhost:8500 --concurrency=100
+        restartPolicy: Always
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    run: sacp-service
+  name: sacp-service
+spec:
+  ports:
+  - port: 8888
+    protocol: TCP
+    targetPort: 8888
+  selector:
+    app: sacp-model-server
+  type: ClusterIP
